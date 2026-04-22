@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="León Runs">
+<meta name="theme-color" content="#ffffff">
+<title>León Runs</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;font-size:15px;padding-bottom:40px}
+.topbar{background:#fff;border-bottom:0.5px solid #d1d1d6;padding:16px 16px 12px;position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.topbar-left h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-0.3px}
+.topbar-left p{margin:4px 0 0;font-size:12px;color:#6e6e73}
+.today-btn{font-size:13px;font-weight:500;color:#185FA5;background:#e8f0fb;border:none;border-radius:9px;padding:7px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px}
+.summary-card{background:#fff;border-radius:12px;padding:12px 14px;border:0.5px solid #e5e5ea}
+.summary-card.full{grid-column:span 2;background:#fff7ed;border-color:#f59e0b}
+.s-label{font-size:11px;color:#6e6e73;margin:0 0 2px}
+.s-val{font-size:22px;font-weight:600;margin:0;letter-spacing:-0.5px}
+.s-val.amber{color:#92400e}
+.year-nav{display:flex;gap:6px;padding:0 16px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.year-nav::-webkit-scrollbar{display:none}
+.month-pill{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:0.5px solid #d1d1d6;background:#fff;color:#6e6e73;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.month-pill.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.month-divider{margin:6px 16px 4px;font-size:13px;font-weight:600;color:#1d1d1f;letter-spacing:-0.2px}
+.month-total-bar{margin:0 16px 14px;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.month-total-bar.has-cost{background:#92400e}
+.month-total-bar.no-cost{background:#e5e5ea}
+.mt-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:0}
+.has-cost .mt-label{color:rgba(255,255,255,0.7)}
+.no-cost .mt-label{color:#8e8e93}
+.mt-val{font-size:18px;font-weight:700;margin:0;letter-spacing:-0.3px}
+.has-cost .mt-val{color:#fff}
+.no-cost .mt-val{color:#8e8e93}
+.week-block{margin:0 16px 8px;background:#fff;border-radius:14px;border:0.5px solid #e5e5ea;overflow:hidden;scroll-margin-top:80px}
+.week-block.current-week{border:1.5px solid #185FA5}
+.week-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f5f5f7;border-bottom:0.5px solid #e5e5ea;flex-wrap:wrap}
+.week-block.current-week .week-head{background:#e8f0fb}
+.week-title{font-size:12px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.week-block.current-week .week-title{color:#185FA5}
+.now-badge{font-size:10px;font-weight:600;background:#185FA5;color:#fff;border-radius:6px;padding:2px 7px;flex-shrink:0}
+.price-wrap{display:flex;align-items:center;gap:5px;margin-left:auto}
+.price-wrap label{font-size:11px;color:#6e6e73;white-space:nowrap}
+.price-wrap input{width:58px;font-size:13px;padding:4px 7px;border:0.5px solid #d1d1d6;border-radius:8px;background:#fff;color:#1d1d1f;-webkit-appearance:none}
+.week-total{font-size:13px;font-weight:600;color:#92400e;background:#fff7ed;border-radius:8px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
+.days-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+.day-cell{padding:12px 14px;border-bottom:0.5px solid #e5e5ea;border-right:0.5px solid #e5e5ea}
+.day-cell:nth-child(2n){border-right:none}
+.day-cell.weekend{grid-column:span 2;border-right:none;border-bottom:none;background:#f9f9fb}
+.day-name{font-size:13px;font-weight:600;margin:0 0 1px;color:#1d1d1f}
+.day-date{font-size:11px;color:#6e6e73;margin:0 0 10px}
+.day-cell.today-cell .day-name{color:#185FA5}
+.day-cell.today-cell .day-date{color:#185FA5}
+.check-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;cursor:pointer;-webkit-user-select:none}
+.check-row input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:#185FA5;flex-shrink:0;cursor:pointer}
+.check-row span{font-size:13px;color:#1d1d1f}
+.day-cost{font-size:11px;font-weight:600;color:#185FA5;margin-top:4px;min-height:15px}
+.wknd-label{font-size:12px;color:#6e6e73;margin:0 0 6px}
+.miles-row{display:flex;align-items:center;gap:8px}
+.miles-row input{flex:1;font-size:14px;padding:7px 10px;border:0.5px solid #d1d1d6;border-radius:9px;background:#fff;color:#1d1d1f;-webkit-appearance:none}
+.miles-row span{font-size:12px;color:#6e6e73}
+.wknd-cost{font-size:11px;font-weight:600;color:#185FA5;margin-top:6px;min-height:15px}
+.past .day-name,.past .day-date,.past .check-row span{color:#b0b0b8}
+.past input[type=checkbox]{opacity:0.4}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>León runs</h1>
+    <p>Household mileage tracker 2025</p>
+  </div>
+  <button class="today-btn" onclick="scrollToToday()">This week</button>
+</div>
+
+<div class="summary">
+  <div class="summary-card">
+    <p class="s-label">Nursery runs</p>
+    <p class="s-val" id="m-runs">0</p>
+  </div>
+  <div class="summary-card">
+    <p class="s-label">Nursery cost</p>
+    <p class="s-val" id="m-nursery">£0.00</p>
+  </div>
+  <div class="summary-card">
+    <p class="s-label">Weekend extras</p>
+    <p class="s-val" id="m-weekend">£0.00</p>
+  </div>
+  <div class="summary-card full">
+    <p class="s-label">Total to reimburse (household → León)</p>
+    <p class="s-val amber" id="m-total">£0.00</p>
+  </div>
+</div>
+
+<div class="year-nav" id="month-nav"></div>
+<div id="calendar"></div>
+
+<script>
+const LITRE_PER_GALLON = 4.54609;
+const LEON_MPG = 50;
+const ONEWAY = 10.3;
+const RETURN_MILES = ONEWAY * 2;
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function costForMiles(miles, diesel) {
+  return ((miles / LEON_MPG) * LITRE_PER_GALLON * diesel) / 100;
+}
+
+function getMondayWeeks() {
+  const weeks = [];
+  let d = new Date(2025, 3, 20);
+  const end = new Date(2025, 11, 29);
+  while (d <= end) { weeks.push(new Date(d)); d.setDate(d.getDate() + 7); }
+  return weeks;
+}
+
+function dateKey(d) { return d.toISOString().slice(0, 10); }
+function weekKey(mon) { return 'wk_' + dateKey(mon); }
+function fmtShort(d) { return d.getDate() + ' ' + MONTHS_SHORT[d.getMonth()]; }
+
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const todayKey = dateKey(today);
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+const currentWeekMonday = getMonday(today);
+const currentWeekKey = dateKey(currentWeekMonday);
+
+let state = {};
+
+function save() {
+  try { localStorage.setItem('leon-tracker-2025', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const r = localStorage.getItem('leon-tracker-2025');
+    if (r) state = JSON.parse(r);
+  } catch(e) {}
+  render();
+  setTimeout(scrollToToday, 120);
+}
+
+function getDay(key) {
+  if (!state[key]) state[key] = { dropoff: false, pickup: false };
+  return state[key];
+}
+
+function getWeek(wk) {
+  if (!state[wk]) state[wk] = { diesel: 190.9, wkndMiles: '' };
+  if (state[wk].diesel === undefined) state[wk].diesel = 190.9;
+  if (state[wk].wkndMiles === undefined) state[wk].wkndMiles = '';
+  return state[wk];
+}
+
+function scrollToToday() {
+  const el = document.getElementById('week-' + currentWeekKey);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToMonth(monthIdx) {
+  const el = document.getElementById('month-' + monthIdx);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Calculate total cost for all weeks belonging to a given month index
+function calcMonthTotal(monthIdx, allWeeks) {
+  let total = 0;
+  allWeeks.forEach(mon => {
+    if (mon.getMonth() !== monthIdx) return;
+    const wk = weekKey(mon);
+    const w = getWeek(wk);
+    const diesel = w.diesel;
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      const day = getDay(dateKey(d));
+      const trips = (day.dropoff ? 1 : 0) + (day.pickup ? 1 : 0);
+      if (trips) total += costForMiles(trips === 2 ? RETURN_MILES : ONEWAY, diesel);
+    }
+    const wm = parseFloat(w.wkndMiles);
+    if (wm > 0) total += costForMiles(wm, diesel);
+  });
+  return total;
+}
+
+function makeMonthTotalBar(monthIdx, allWeeks) {
+  const total = calcMonthTotal(monthIdx, allWeeks);
+  const bar = document.createElement('div');
+  bar.className = 'month-total-bar ' + (total > 0 ? 'has-cost' : 'no-cost');
+
+  const label = document.createElement('p');
+  label.className = 'mt-label';
+  label.textContent = MONTHS_SHORT[monthIdx] + ' total to reimburse';
+
+  const val = document.createElement('p');
+  val.className = 'mt-val';
+  val.textContent = total > 0 ? '£' + total.toFixed(2) : '£0.00';
+
+  bar.appendChild(label);
+  bar.appendChild(val);
+  return bar;
+}
+
+function updateMetrics() {
+  let totalRuns = 0, nurseryCost = 0, weekendCost = 0;
+  getMondayWeeks().forEach(mon => {
+    const wk = weekKey(mon);
+    const w = getWeek(wk);
+    const diesel = w.diesel;
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      const day = getDay(dateKey(d));
+      const trips = (day.dropoff ? 1 : 0) + (day.pickup ? 1 : 0);
+      if (!trips) continue;
+      totalRuns++;
+      nurseryCost += costForMiles(trips === 2 ? RETURN_MILES : ONEWAY, diesel);
+    }
+    const wm = parseFloat(w.wkndMiles);
+    if (wm > 0) weekendCost += costForMiles(wm, diesel);
+  });
+  document.getElementById('m-runs').textContent = totalRuns;
+  document.getElementById('m-nursery').textContent = '£' + nurseryCost.toFixed(2);
+  document.getElementById('m-weekend').textContent = '£' + weekendCost.toFixed(2);
+  document.getElementById('m-total').textContent = '£' + (nurseryCost + weekendCost).toFixed(2);
+}
+
+function buildMonthNav(weeks) {
+  const nav = document.getElementById('month-nav');
+  nav.innerHTML = '';
+  const seen = new Set();
+  weeks.forEach(mon => {
+    const m = mon.getMonth();
+    if (seen.has(m)) return;
+    seen.add(m);
+    const pill = document.createElement('button');
+    pill.className = 'month-pill' + (m === today.getMonth() ? ' active' : '');
+    pill.textContent = MONTHS_SHORT[m];
+    pill.onclick = () => scrollToMonth(m);
+    nav.appendChild(pill);
+  });
+}
+
+function render() {
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  const dayNames = ['Mon', 'Tue', 'Wed'];
+  const weeks = getMondayWeeks();
+  buildMonthNav(weeks);
+
+  // Group weeks by month
+  const monthGroups = {};
+  weeks.forEach(mon => {
+    const m = mon.getMonth();
+    if (!monthGroups[m]) monthGroups[m] = [];
+    monthGroups[m].push(mon);
+  });
+
+  const monthIndices = Object.keys(monthGroups).map(Number).sort((a,b) => a-b);
+
+  monthIndices.forEach(monthIdx => {
+    // Month header
+    const div = document.createElement('div');
+    div.className = 'month-divider';
+    div.id = 'month-' + monthIdx;
+    div.textContent = MONTHS[monthIdx] + ' 2025';
+    cal.appendChild(div);
+
+    // Weeks for this month
+    monthGroups[monthIdx].forEach(mon => {
+      const wk = weekKey(mon);
+      const w = getWeek(wk);
+      const diesel = w.diesel;
+      const isCurrentWeek = dateKey(mon) === currentWeekKey;
+
+      let weekNurseryCost = 0;
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(mon); d.setDate(mon.getDate() + i);
+        const day = getDay(dateKey(d));
+        const trips = (day.dropoff ? 1 : 0) + (day.pickup ? 1 : 0);
+        if (trips) weekNurseryCost += costForMiles(trips === 2 ? RETURN_MILES : ONEWAY, diesel);
+      }
+      const wkndMiles = parseFloat(w.wkndMiles) || 0;
+      const wkndCost = wkndMiles > 0 ? costForMiles(wkndMiles, diesel) : 0;
+      const weekTotal = weekNurseryCost + wkndCost;
+
+      const block = document.createElement('div');
+      block.className = 'week-block' + (isCurrentWeek ? ' current-week' : '');
+      block.id = 'week-' + dateKey(mon);
+
+      const head = document.createElement('div');
+      head.className = 'week-head';
+
+      const title = document.createElement('span');
+      title.className = 'week-title';
+      title.textContent = 'w/c ' + fmtShort(mon);
+      head.appendChild(title);
+
+      if (isCurrentWeek) {
+        const badge = document.createElement('span');
+        badge.className = 'now-badge';
+        badge.textContent = 'This week';
+        head.appendChild(badge);
+      }
+
+      const priceWrap = document.createElement('div');
+      priceWrap.className = 'price-wrap';
+      const pLabel = document.createElement('label');
+      pLabel.textContent = 'Diesel p/L';
+      const pInput = document.createElement('input');
+      pInput.type = 'number';
+      pInput.inputMode = 'decimal';
+      pInput.value = diesel.toFixed(1);
+      pInput.step = '0.1';
+      pInput.addEventListener('change', () => {
+        getWeek(wk).diesel = parseFloat(pInput.value) || 190.9;
+        save(); render();
+      });
+      priceWrap.appendChild(pLabel);
+      priceWrap.appendChild(pInput);
+      head.appendChild(priceWrap);
+
+      const wkTotal = document.createElement('span');
+      wkTotal.className = 'week-total';
+      wkTotal.textContent = weekTotal > 0 ? '£' + weekTotal.toFixed(2) : '—';
+      head.appendChild(wkTotal);
+      block.appendChild(head);
+
+      const grid = document.createElement('div');
+      grid.className = 'days-grid';
+
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(mon); d.setDate(mon.getDate() + i);
+        const key = dateKey(d);
+        const isPast = d < today;
+        const isToday = key === todayKey;
+        const dayData = getDay(key);
+        const trips = (dayData.dropoff ? 1 : 0) + (dayData.pickup ? 1 : 0);
+        const dc = trips > 0 ? costForMiles(trips === 2 ? RETURN_MILES : ONEWAY, diesel) : null;
+
+        const cell = document.createElement('div');
+        let cls = 'day-cell';
+        if (isPast && !isToday) cls += ' past';
+        if (isToday) cls += ' today-cell';
+        cell.className = cls;
+
+        const nm = document.createElement('p'); nm.className = 'day-name'; nm.textContent = dayNames[i];
+        const dt = document.createElement('p'); dt.className = 'day-date'; dt.textContent = fmtShort(d);
+        const doRow = makeCheck('Drop-off', key, 'dropoff', dayData.dropoff);
+        const puRow = makeCheck('Pick-up', key, 'pickup', dayData.pickup);
+        const costEl = document.createElement('p');
+        costEl.className = 'day-cost';
+        costEl.textContent = dc !== null ? '£' + dc.toFixed(2) : '';
+
+        cell.appendChild(nm); cell.appendChild(dt);
+        cell.appendChild(doRow); cell.appendChild(puRow);
+        cell.appendChild(costEl);
+        grid.appendChild(cell);
+      }
+
+      const sat = new Date(mon); sat.setDate(mon.getDate() + 5);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      const wkndCell = document.createElement('div');
+      wkndCell.className = 'day-cell weekend';
+
+      const wnm = document.createElement('p'); wnm.className = 'day-name'; wnm.textContent = 'Weekend';
+      const wdt = document.createElement('p'); wdt.className = 'day-date'; wdt.textContent = fmtShort(sat) + '–' + fmtShort(sun);
+      const wlbl = document.createElement('p'); wlbl.className = 'wknd-label'; wlbl.textContent = 'Extra miles in León';
+
+      const milesRow = document.createElement('div');
+      milesRow.className = 'miles-row';
+      const mInput = document.createElement('input');
+      mInput.type = 'number';
+      mInput.inputMode = 'decimal';
+      mInput.placeholder = '0';
+      mInput.value = w.wkndMiles || '';
+      mInput.step = '0.1';
+      mInput.min = '0';
+      mInput.addEventListener('change', () => {
+        getWeek(wk).wkndMiles = mInput.value;
+        save(); render();
+      });
+      const mUnit = document.createElement('span'); mUnit.textContent = 'miles';
+      milesRow.appendChild(mInput); milesRow.appendChild(mUnit);
+
+      const wcEl = document.createElement('p');
+      wcEl.className = 'wknd-cost';
+      wcEl.textContent = wkndCost > 0 ? '£' + wkndCost.toFixed(2) : '';
+
+      wkndCell.appendChild(wnm); wkndCell.appendChild(wdt);
+      wkndCell.appendChild(wlbl); wkndCell.appendChild(milesRow);
+      wkndCell.appendChild(wcEl);
+      grid.appendChild(wkndCell);
+
+      block.appendChild(grid);
+      cal.appendChild(block);
+    });
+
+    // Month total bar after the last week of the month
+    cal.appendChild(makeMonthTotalBar(monthIdx, weeks));
+  });
+
+  updateMetrics();
+}
+
+function makeCheck(label, key, field, checked) {
+  const row = document.createElement('label');
+  row.className = 'check-row';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = checked;
+  cb.addEventListener('change', () => {
+    getDay(key)[field] = cb.checked;
+    save(); render();
+  });
+  const lbl = document.createElement('span');
+  lbl.textContent = label;
+  row.appendChild(cb); row.appendChild(lbl);
+  return row;
+}
+
+loadState();
+</script>
+</body>
+</html>
